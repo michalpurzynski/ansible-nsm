@@ -1,0 +1,6 @@
+- name: restart hekad
+  command: supervisorctl reload heka
+
+- name: restart supervisor
+  service: name=supervisor state=restarted
+

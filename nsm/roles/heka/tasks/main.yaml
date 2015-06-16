@@ -1,0 +1,49 @@
+- name: Fetch the Heka package
+  become: yes
+  become_user: mozdef
+  become_method: sudo
+  get_url:
+    url={{ heka_package_url }}/v{{ heka_package_ver }}/heka_{{ heka_package_ver }}_amd64.deb
+    dest={{ mozdef_home_dir }}/heka_{{ heka_package_ver }}_amd64.deb
+  register: hekafetched
+
+- name: Install Heka
+  when: hekafetched|success
+  apt: deb={{ mozdef_home_dir }}/heka_{{ heka_package_ver }}_amd64.deb
+  register: hekainstalled
+
+- name: Install supervisor
+  apt: name=supervisor state=latest
+  register: supervisorinstalled
+
+- name: Ensure that the supervisor service is running
+  when: supervisorinstalled|success
+  service: name=supervisor state=started enabled=yes
+
+- name: Copy the heka configuration file for sensors with only Bro
+  when: (nsm_role_bro is defined and hekainstalled|success)
+  template: src=heka-nsmnoticemonitor.j2 dest=/etc/heka.toml owner=root group=root mode=0644
+  notify: restart hekad
+  register: hekaisdone
+
+- name: Copy the heka configuration file for sensors with only Suricata
+  when: (nsm_role_suricata is defined and hekainstalled|success)
+  template: src=heka-nsmsurimonitor.j2 dest=/etc/heka.toml owner=root group=root mode=0644
+  notify: restart hekad
+  register: hekaisdone
+
+- name: Copy the heka configuration file for sensors with Suricata and Bro together
+  when: (nsm_role_offices is defined and hekainstalled|success)
+  template: src=heka-nsmnoticesurimonitor.j2 dest=/etc/heka.toml owner=root group=root mode=0644
+  notify: restart hekad
+  register: hekaisdone
+
+- name: Copy the supervisor configuration file for heka
+  when: (supervisorinstalled|success and hekaisdone|success)
+  copy: src=heka.conf dest=/etc/supervisor/conf.d/heka.conf owner=root group=root mode=0644
+  notify: restart supervisor
+
+- name: Ensure that the Heka service is running
+  supervisorctl: name=heka.conf state=started
+  when: (hekaisdone|success and supervisorinstalled|success)
+

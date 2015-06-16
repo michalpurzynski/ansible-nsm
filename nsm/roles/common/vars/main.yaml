@@ -1,0 +1,14 @@
+pkg_to_install: 
+    - dnsutils
+    - wget
+    - curl
+    - netcat-openbsd
+    - python-virtualenv
+
+pkg_to_remove: 
+    - irqbalance
+    - tcpdump
+    - iptraf
+    - wireshark
+    - tshark
+

@@ -1,0 +1,86 @@
+[bro_intel]
+type = "LogstreamerInput"
+log_directory = "/nsm/bro/logs/current"
+file_match = 'intel\.log'
+decoder = "bro_intel_transform_decoder"
+
+[bro_intel_transform_decoder]
+type = "SandboxDecoder"
+script_type = "lua"
+filename = "bro_intel.lua"
+
+[bro_notice]
+type = "LogstreamerInput"
+log_directory = "/nsm/bro/logs/current"
+file_match = 'notice\.log'
+decoder = "bro_notice_transform_decoder"
+
+[bro_notice_transform_decoder]
+type = "SandboxDecoder"
+script_type = "lua"
+filename = "bro_notice.lua"
+
+[bro_tunnel]
+type = "LogstreamerInput"
+log_directory = "/nsm/bro/logs/current"
+file_match = 'tunnel\.log'
+decoder = "bro_tunnel_transform_decoder"
+
+[bro_tunnel_transform_decoder]
+type = "SandboxDecoder"
+script_type = "lua"
+filename = "bro_tunnel.lua"
+
+[nsmmonitor]
+type = "LogstreamerInput"
+log_directory = "/var/log/"
+file_match = 'brozilla\_stat\.log'
+decoder = "nsmmonitor_transform_decoder"
+
+[nsmmonitor_transform_decoder]
+type = "SandboxDecoder"
+script_type = "lua"
+filename = "nsmmonitor.lua"
+
+[nsmmonitor_transform_decoder.config]
+hostname="<%= fqdn %>"
+
+[surialert]
+type = "LogstreamerInput"
+log_directory = "/var/log/nsm/"
+file_match = 'eve\.json'
+decoder = "surialert_transform_decoder"
+
+[surialert_transform_decoder]
+type = "SandboxDecoder"
+script_type = "lua"
+filename = "eve-json.lua"
+
+[surialert_transform_decoder.config]
+hostname="{{ ansible_hostname }}.{{ ansible_domain }}"
+
+[MozDefEncoder]
+type = "SandboxEncoder"
+script_type = "lua"
+filename = "lua_encoders/mozdef.lua"
+
+#[stdout]
+#type = "LogOutput"
+#message_matcher = "TRUE"
+
+[AMQPOutput]
+url = "amqp://guest:guest@localhost"
+message_matcher = "( Type!='heka.all-report' && Type != 'IGNORE' ) && ( Type == 'brointel' || Type =='bronotice' || Type == 'brotunnel' || Type == 'nsmmonitor' || Type == 'suricata_event_log' )"
+exchange = "eventtask"
+exchange_type = "direct"
+exchange_durability = true
+exchange_auto_delete = false
+routing_key = "eventtask"
+serialize = false
+encoder = "MozDefEncoder"
+content_type = "application/json"
+use_framing = false
+[AMQPOutput.retries]
+max_delay = "10s"
+max_retries = -1
+

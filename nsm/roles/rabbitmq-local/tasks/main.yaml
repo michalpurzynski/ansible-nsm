@@ -1,0 +1,42 @@
+- name: Install RabbitMQ server
+  apt: name={{ item }} update_cache=no state=installed
+  with_items:
+    - rabbitmq-server
+  register: rabbitmqinstalled
+
+- name: Ensure that the RabbitMQ service is running
+  when: rabbitmqinstalled|success
+  service: name=rabbitmq-server state=started enabled=yes
+  register: rabbitmqup
+
+- name: create the mozdef user
+  when: rabbitmqup
+  rabbitmq_user: user=mozdef
+                 password={{ rabbitmq_mozdef_password }}
+                 force=yes
+                 vhost=/
+                 configure_priv=.*
+                 read_priv=.*
+                 write_priv=.*
+                 state=present
+
+- name: create the admin user
+  when: rabbitmqup
+  rabbitmq_user: user=admin
+                 password={{ rabbitmq_admin_password }}
+                 force=yes
+                 vhost=/
+                 configure_priv=.*
+                 read_priv=.*
+                 write_priv=.*
+                 state=present
+
+- name: create the guest user
+  when: rabbitmqup
+  rabbitmq_user: user=guest
+                 vhost=/
+                 configure_priv=.*
+                 read_priv=.*
+                 write_priv=.*
+                 state=present
+

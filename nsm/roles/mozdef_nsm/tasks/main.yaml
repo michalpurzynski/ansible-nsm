@@ -1,0 +1,54 @@
+- name: Install the necessary system packages
+  apt: name={{ item }} state=latest
+  with_items:
+    - python-dev
+  register: pythonpkgs
+
+- name: Create group mozdef
+  group: name={{ mozdef_group }}
+  register: mozdefuser
+
+- name: Create user mozdef
+  user: name={{ mozdef_user }} group={{ mozdef_group }} home={{ mozdef_home_dir }} shell={{ mozdef_shell }}
+  register: mozdefgroup
+
+- name: Create a directory to hold virtual envs
+  when: (mozdefgroup|success and mozdefuser|success)
+  file: path={{ mozdef_home_dir }}/{{ mozdef_python_envs_dir }} state=directory owner={{ mozdef_user }} group={{ mozdef_group }} mode=0755
+  register: mozdefhome
+
+- name: Create the mozdef virtualenv
+  become: yes
+  become_user: "{{ mozdef_user }}"
+  become_method: sudo
+  when: (mozdefhome|success and pythonpkgs|success)
+  command: virtualenv {{ mozdef_home_dir }}/{{ mozdef_python_envs_dir }}/mozdef -p python{{ mozdef_python_version }} creates={{ mozdef_home_dir }}/{{ mozdef_python_envs_dir }}/mozdef
+  register: mozdefenvs
+
+- name: Install the necessary Python packages
+  when: mozdefenvs|success
+  become: yes
+  become_user: "{{ mozdef_user }}"
+  become_method: sudo
+  pip: virtualenv=/home/mozdef/envs/mozdef name={{ item }} state=latest
+  with_items: "{{ mozdef_python_pkgs }}"
+
+- name: Make sure the mozdef user owns everything in his home
+  file: path={{ mozdef_home_dir }}/{{ mozdef_python_envs_dir }} recurse=yes owner={{ mozdef_user }} group={{ mozdef_group }}
+  register: mozdefhomeperms
+
+- name: Fetch the mozdef package
+  when: mozdefhomeperms|success
+  become: yes
+  become_user: "{{ mozdef_user }}"
+  become_method: sudo
+  get_url:
+    url={{ mozdef_front_url }}/{{ mozdef_front_pkg }}
+    dest={{ mozdef_home_dir }}/{{ mozdef_front_pkg }}
+  register: mozdefpkg
+
+- name: Install the mozdef nsm frontend
+  when: mozdefpkg|success
+  apt: deb={{ mozdef_home_dir }}/{{ mozdef_front_pkg }}
+
+

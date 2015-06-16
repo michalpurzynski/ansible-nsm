@@ -1,0 +1,28 @@
+---
+- hosts: nsm-stage-servers
+  remote_user: root
+  become: yes
+  become_method: sudo
+  roles:
+    - common
+    - nsmserver
+
+#- hosts: nsm-prod-servers
+#  remote_user: root
+#  become: yes
+#  become_method: sudo
+#  roles:
+#    - common
+#    - nsmserver
+
+- hosts: nsm-stage-sensors
+  remote_user: root
+  become: yes
+  become_method: sudo
+  roles:
+    - common
+    - brosensor
+    - rabbitmq-local
+    - heka
+    - mozdef_nsm
+

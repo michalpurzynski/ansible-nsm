@@ -1,0 +1,8 @@
+nsm_scripts_path: /usr/local/sbin
+nsm_server_dirs:
+    - /etc/nsm
+    - /etc/nsm/pulledpork
+    - /etc/nsm/rules
+    - /var/log/nsm
+    - /var/www
+

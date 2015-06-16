@@ -1,0 +1,4 @@
+heka_package_url: https://github.com/mozilla-services/heka/releases/download
+heka_package_ver: 0.7.3
+mozdef_home_dir: /home/mozdef
+
