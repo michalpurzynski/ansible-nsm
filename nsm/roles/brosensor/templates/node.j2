@@ -1,0 +1,24 @@
+[{{ ansible_hostname }}-manager]
+type=manager
+host=localhost
+
+{% for n in range(0, bro_proxies_num)  %}
+[{{ ansible_hostname }}-proxy{{ n+1 }}]
+type=proxy
+host=localhost
+{% endfor %}
+
+[{{ ansible_hostname }}-{{ cap_name }}]
+type=worker
+host=localhost
+interface={{ cap_name }}
+lb_method={{ cap_type }}
+lb_procs={{ bro_proc_num }}
+pin_cpus={{ range(1, bro_proc_num+1)|join(',') }}
+{% if cap_type == "myricom" %}
+env_vars=SNF_DEBUG_MASK=0x3,SNF_DESCRING_SIZE=4294967296,SNF_DATARING_SIZE=17179869184
+{% endif %}
+{% if cap_name == "pf_ring" %}
+'# placeholder'
+{% endif %}
+
