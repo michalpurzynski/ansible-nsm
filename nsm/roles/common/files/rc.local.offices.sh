@@ -31,6 +31,8 @@ modprobe pf_ring
 iptables-restore < /etc/iptables/rules.v4
 ip6tables-restore < /etc/iptables/rules.v6
 
+echo -n deadline > /sys/block/sda/queue/scheduler
+
 cpuseq=$((`ls -lh /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq | wc -l`-1))
 for i in `seq 0 "$cpuseq"`; do cpufreq-set -g performance -c $i; echo -n `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq` > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq; done;
 
