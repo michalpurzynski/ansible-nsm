@@ -1,0 +1,53 @@
+---
+- name: Create necessary Suricata directories
+  when: (nsm_role_offices is defined or nsm_role_suricata is defined)
+  file: path={{ item }} state=directory owner=root group=root mode=0755
+  with_items: "{{ suricata_dirs }}"
+  register: suridirs
+
+- name: Copy suricata.yaml - office version
+  when: (suridirs|success and nsm_role_offices is defined)
+  copy: src=suricata.offices.yaml dest={{ nsm_config_dir }}/suricata.yaml owner=root group=root mode=0644 backup=yes
+
+- name: Copy suricata.yaml - data center version
+  when: (suridirs|success and nsm_role_suricata is defined)
+  copy: src=suricata.dc.yaml dest={{ nsm_config_dir }}/suricata.yaml owner=root group=root mode=0644 backup=yes
+
+- name: Copy BPF filters - office version
+  when: (suridirs|success and nsm_role_offices is defined)
+  copy: src=suri-bpf.offices.conf dest={{ nsm_config_dir }}/suri-bpf.conf owner=root group=root mode=0644 backup=yes
+
+- name: Copy BPF filters - data center version
+  when: (suridirs|success and nsm_role_suricata is defined)
+  copy: src=suri-bpf.dc.conf dest={{ nsm_config_dir }}/suri-bpf.conf owner=root group=root mode=0644 backup=yes
+
+- name: Copy startup scripts - office version
+  when: (suridirs|success and nsm_role_offices is defined)
+  copy: src=start_pfring_suricata.sh dest=/usr/local/sbin/start_pfring_suricata.sh owner=root group=root mode=0755
+
+- name: Copy startup scripts - data center version
+  when: (suridirs|success and nsm_role_suricata is defined)
+  copy: src=start_myricom_suricata.sh dest=/usr/local/sbin/start_myricom_suricata.sh owner=root group=root mode=0755
+
+- name: Copy various Suricata support files
+  when: suridirs|success
+  copy: src={{ item }} dest={{ nsm_config_dir }}/{{ item }} owner=root group=root mode=0755
+  with_items: "{{ suricata_misc_files }}"
+  register: surimiscfiles
+
+- name: Copy various shell and python scripts
+  when: suridirs|success
+  copy: src={{ item }} dest={{ nsm_scripts_path }}/{{ item }} owner=root group=root mode=0755
+  with_items: "{{ nsm_scripts_list }}"
+  register: suriscripts
+
+- name: Create fetch_list_assured cron job
+  when: suriscripts|success
+  cron: name="fetch_list_assured" job={{ nsm_scripts_path }}/fetch_list_assured.py hour="04" minute="29" cron_file="fetchlistassured" user="root"
+  when: (nsm_role_offices is defined or nsm_role_suricata is defined)
+
+- name: Create idsrulesupdate cron job
+  when: suriscripts|success
+  cron: name="idsrulesupdate" job={{ nsm_scripts_path }}/idsrulesupdate.sh hour="04" minute="18" cron_file="idsrulesupdate" user="root"
+  when: (nsm_role_offices is defined or nsm_role_suricata is defined)
+

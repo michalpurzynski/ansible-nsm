@@ -1,0 +1,67 @@
+---
+- name: Create group brozilla
+  group: name={{ brozilla_group }}
+  register: brozillauser
+
+- name: Create user brozilla
+  user: name={{ brozilla_user }} group={{ brozilla_group }} home={{ brozilla_home_dir }} shell={{ brozilla_shell }}
+  register: brozillagroup
+
+- name: Create necessary Bro directories
+  file: path={{ item }} state=directory owner=root group=root mode=0755
+  with_items: "{{ bro_dirs }}"
+  register: brodirs
+
+- name: Copy broctl.cfg
+  when: brodirs|success
+  copy: src=broctl.cfg dest=/opt/bro/etc/broctl.cfg owner=root group=root mode=0644 backup=yes
+
+- name: Copy networks.cfg
+  when: brodirs|success
+  copy: src=networks.cfg dest=/opt/bro/etc/networks.cfg owner=root group=root mode=0644 backup=yes
+
+- name: Copy local.bro
+  when: brodirs|success
+  copy: src=local.bro dest=/opt/bro/share/bro/site/local.bro owner=root group=root mode=0644 backup=yes
+
+- name: Copy del_old_bro_logs.log
+  when: brodirs|success
+  copy: src=del_old_bro_logs.log dest={{ nsm_log_dir }}/del_old_bro_logs.log owner=root group=root mode=0644
+
+- name: Copy various shell and python scripts
+  when: brodirs|success
+  copy: src={{ item }} dest={{ nsm_scripts_path }}/{{ item }} owner=root group=root mode=0755
+  with_items: "{{ nsm_scripts_list }}"
+  register: broscripts
+
+- name: Create brozilla fetch cron job
+  cron: name="Brozilla fetch" job={{ nsm_scripts_path }}/brozillafetch.sh minute="*/15" cron_file="brozillafetch" user="brozilla"
+  when: (nsm_role_bro is defined or nsm_role_offices is defined)
+
+- name: Create intelzilla fetch cron job
+  cron: name="Intelzilla fetch" job={{ nsm_scripts_path }}/intelzillafetch.sh minute="*/5" cron_file="intelzillafetch" user="brozilla"
+  when: (nsm_role_bro is defined or nsm_role_offices is defined)
+
+- name: Create criticalstackupdate cron job
+  cron: name="criticalstackupdate" job={{ nsm_scripts_path }}/criticalstackupdate.sh hour="04" minute="29" cron_file="criticalstackupdate" user="root"
+  when: (nsm_role_bro is defined or nsm_role_offices is defined)
+
+- name: Create iqriskupdatesensors cron job
+  cron: name="iqriskupdatesensors" job={{ nsm_scripts_path }}/fetch_list_assured.py hour="04" minute="29" cron_file="iqriskupdatesensors" user="root"
+
+- name: Create brodailyrestartcron cron job
+  cron: name="brodailyrestartcron" job={{ nsm_scripts_path }}/"mybroctl.sh restart" hour="04" minute="31" cron_file="brodailyrestartcron" user="root"
+  when: (nsm_role_bro is defined or nsm_role_offices is defined)
+
+#- name: Create browatchdogcron cron job
+#  cron: name="browatchdogcron" job="/usr/local/sbin/brodog.sh" minute="*/7" cron_file="browatchdogcron" user="root"
+#  when: (nsm_role_bro is defined or nsm_role_offices is defined)
+
+- name: Create deloldbrologslog cron job
+  cron: name="deloldbrologslog" job={{ nsm_scripts_path }}"/del_old_bro_logs.py >> /var/log/nsm/del_old_bro_logs.log" minute="*" cron_file="deloldbrologslog" user="root"
+  when: (nsm_role_bro is defined or nsm_role_offices is defined)
+
+- name: Create broctl cron job
+  cron: name="broctl" job="/opt/bro/bin/broctl cron" minute="*/5" cron_file="broctl" user="root"
+  when: (nsm_role_bro is defined or nsm_role_offices is defined)
+
