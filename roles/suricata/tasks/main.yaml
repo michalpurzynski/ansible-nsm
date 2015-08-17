@@ -43,11 +43,11 @@
 
 - name: Create fetch_list_assured cron job
   when: suriscripts|success
-  cron: name="fetch_list_assured" job={{ nsm_scripts_path }}/fetch_list_assured.py hour="04" minute="29" cron_file="fetchlistassured" user="root"
+  cron: name="fetch_list_assured" job="{{ nsm_scripts_path }}/fetch_list_assured.py >> /var/log/nsm/fetch_list_assured.log 2>&1" hour="04" minute="29" cron_file="fetchlistassured" user="root"
   when: (nsm_role_offices is defined or nsm_role_suricata is defined)
 
 - name: Create idsrulesupdate cron job
   when: suriscripts|success
-  cron: name="idsrulesupdate" job={{ nsm_scripts_path }}/idsrulesupdate.sh hour="04" minute="18" cron_file="idsrulesupdate" user="root"
+  cron: name="idsrulesupdate" job="{{ nsm_scripts_path }}/idsrulesupdate.sh >> /var/log/nsm/idsrulesupdate.log 2>&1" hour="04" minute="18" cron_file="idsrulesupdate" user="root"
   when: (nsm_role_offices is defined or nsm_role_suricata is defined)
 

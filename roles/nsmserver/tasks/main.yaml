@@ -17,17 +17,17 @@
 
 - name: Create idsrulesupdate cron job
   when: nsmserverscripts|success
-  cron: name="idsrulesupdate" hour="4" minute="10" job={{ nsm_scripts_path }}/idsrulesupdate.sh cron_file="idsrulesupdate" user="root"
+  cron: name="idsrulesupdate" hour="4" minute="10" job="{{ nsm_scripts_path }}/idsrulesupdate.sh >> /var/log/nsm/idsrulesupdate.log 2>&1" cron_file="idsrulesupdate" user="root"
 
 - name: Create criticalstackpull cron job
   when: nsmserverscripts|success
-  cron: name="criticalstackpull" hour="4" minute="11" job="/usr/bin/critical-stack-intel pull" cron_file="criticalstackpull" user="root"
+  cron: name="criticalstackpull" hour="4" minute="11" job="/usr/bin/critical-stack-intel pull >> /var/log/nsm/criticalstackpull.log 2>&1" cron_file="criticalstackpull" user="root"
 
 - name: Create criticalstackupdate cron job
   when: nsmserverscripts|success
-  cron: name="criticalstackupdate" hour="4" minute="14" job={{ nsm_scripts_path }}/criticalstackupdate.sh cron_file="criticalstackupdate" user="root"
+  cron: name="criticalstackupdate" hour="4" minute="14" job="{{ nsm_scripts_path }}/criticalstackupdate.sh >> /var/log/nsm/criticalstackupdate.log 2>&1" cron_file="criticalstackupdate" user="root"
 
 - name: Create iqriskupdate cron job
   when: nsmserverscripts|success
-  cron: name="iqriskupdate" hour="4" minute="17" job={{ nsm_scripts_path }}/iqriskupdate.py cron_file="iqriskupdate" user="root"
+  cron: name="iqriskupdate" hour="4" minute="17" job="{{ nsm_scripts_path }}/iqriskupdate.py >> /var/log/nsm/iqriskupdate.log 2>&1" cron_file="iqriskupdate" user="root"
 

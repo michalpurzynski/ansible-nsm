@@ -24,9 +24,26 @@
   when: brodirs|success
   copy: src=local.bro dest=/opt/bro/share/bro/site/local.bro owner=root group=root mode=0644 backup=yes
 
-- name: Copy del_old_bro_logs.log
-  when: brodirs|success
-  copy: src=del_old_bro_logs.log dest={{ nsm_log_dir }}/del_old_bro_logs.log owner=root group=root mode=0644
+- stat: path=/var/log/nsm/brozillafetch.log
+  register: bflog
+
+- name: Create and assign permissions to brozillafetch.log
+  file: path=/var/log/nsm/brozillafetch.log state=touch owner=brozilla group=brozilla mode=0600
+  when: (bflog.stat.exists is undefined or bflog.stat.pw_name != "brozilla")
+
+- stat: path=/var/log/nsm/intelzillafetch.log
+  register: iflog
+
+- name: Create and assign permissions to intelzillafetch.log
+  file: path=/var/log/nsm/intelzillafetch.log state=touch owner=brozilla group=brozilla mode=0600
+  when: (iflog.stat.exists is undefined or iflog.stat.pw_name != "brozilla")
+
+- stat: path=/var/log/nsm/del_old_bro_logs.log
+  register: iflog
+
+- name: Create and assign permissions to del_old_bro_logs.log
+  file: path=/var/log/nsm/del_old_bro_logs.log state=touch owner=brozilla group=brozilla mode=0600
+  when: (iflog.stat.exists is undefined or iflog.stat.pw_name != "brozilla")
 
 - name: Copy various shell and python scripts
   when: brodirs|success
@@ -35,22 +52,22 @@
   register: broscripts
 
 - name: Create brozilla fetch cron job
-  cron: name="Brozilla fetch" job={{ nsm_scripts_path }}/brozillafetch.sh minute="*/15" cron_file="brozillafetch" user="brozilla"
+  cron: name="Brozilla fetch" job="{{ nsm_scripts_path }}/brozillafetch.sh >> /var/log/nsm/brozillafetch.log 2>&1" minute="*/15" cron_file="brozillafetch" user="brozilla"
   when: (nsm_role_bro is defined or nsm_role_offices is defined)
 
 - name: Create intelzilla fetch cron job
-  cron: name="Intelzilla fetch" job={{ nsm_scripts_path }}/intelzillafetch.sh minute="*/5" cron_file="intelzillafetch" user="brozilla"
+  cron: name="Intelzilla fetch" job="{{ nsm_scripts_path }}/intelzillafetch.sh >> /var/log/nsm/intelzillafetch.log 2>&1" minute="*/5" cron_file="intelzillafetch" user="brozilla"
   when: (nsm_role_bro is defined or nsm_role_offices is defined)
 
 - name: Create criticalstackupdate cron job
-  cron: name="criticalstackupdate" job={{ nsm_scripts_path }}/criticalstackupdate.sh hour="04" minute="29" cron_file="criticalstackupdate" user="root"
+  cron: name="criticalstackupdate" job="{{ nsm_scripts_path }}/criticalstackupdate.sh >> /var/log/nsm/criticalstackupdate.log 2>&1" hour="04" minute="29" cron_file="criticalstackupdate" user="root"
   when: (nsm_role_bro is defined or nsm_role_offices is defined)
 
 - name: Create iqriskupdatesensors cron job
-  cron: name="iqriskupdatesensors" job={{ nsm_scripts_path }}/fetch_list_assured.py hour="04" minute="29" cron_file="iqriskupdatesensors" user="root"
+  cron: name="iqriskupdatesensors" job="{{ nsm_scripts_path }}/fetch_list_assured.py >> /var/log/nsm/iqriskupdatesensors.log 2>&1" hour="04" minute="29" cron_file="iqriskupdatesensors" user="root"
 
 - name: Create brodailyrestartcron cron job
-  cron: name="brodailyrestartcron" job={{ nsm_scripts_path }}/"mybroctl.sh restart" hour="04" minute="31" cron_file="brodailyrestartcron" user="root"
+  cron: name="brodailyrestartcron" job="{{ nsm_scripts_path }}/mybroctl.sh restart >> /var/log/nsm/brodailyrestartcron.log 2>&1" hour="04" minute="31" cron_file="brodailyrestartcron" user="root"
   when: (nsm_role_bro is defined or nsm_role_offices is defined)
 
 #- name: Create browatchdogcron cron job
@@ -58,10 +75,10 @@
 #  when: (nsm_role_bro is defined or nsm_role_offices is defined)
 
 - name: Create deloldbrologslog cron job
-  cron: name="deloldbrologslog" job={{ nsm_scripts_path }}"/del_old_bro_logs.py >> /var/log/nsm/del_old_bro_logs.log" minute="*" cron_file="deloldbrologslog" user="root"
+  cron: name="deloldbrologslog" job="{{ nsm_scripts_path }}/del_old_bro_logs.py >/dev/null 2>&1" minute="*" cron_file="deloldbrologslog" user="root"
   when: (nsm_role_bro is defined or nsm_role_offices is defined)
 
 - name: Create broctl cron job
-  cron: name="broctl" job="/opt/bro/bin/broctl cron" minute="*/5" cron_file="broctl" user="root"
+  cron: name="broctl" job="/opt/bro/bin/broctl cron >> /var/log/nsm/broctlcron.log 2>&1" minute="*/5" cron_file="broctl" user="root"
   when: (nsm_role_bro is defined or nsm_role_offices is defined)
 
