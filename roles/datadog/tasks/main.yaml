@@ -1,0 +1,27 @@
+- name: Install apt-transport-https
+  apt: pkg=apt-transport-https state=installed
+  register: apthttpsinstalled
+
+- name: Add the datadog repo GPG key
+  apt_key: keyserver={{ dd_keyserver }} id={{ dd_keyid }}
+  register: aptddkey
+
+- name: Copy the DataDog repository definition
+  when: (apthttpsinstalled|success and aptddkey|success )
+  copy: src=datadog.list dest=/etc/apt/sources.list.d/datadog.list
+  register: ddrepo
+
+- name: Update the package repository
+  when: ddrepo|success
+  apt: update_cache=yes
+  register: aptcache
+
+- name: Install the DataDog agent
+  when: (aptcache|success)
+  apt: pkg=datadog-agent state=installed
+  register: ddagentinstalled
+
+- name: Create the datadog configuration file
+  when: ddagentinstalled
+  template: src=datadog.j2 dest=/etc/dd-agent/datadog.conf owner={{ dd_user }} group=root mode=0600
+  notify: restart datadog
